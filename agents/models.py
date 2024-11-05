@@ -2,6 +2,8 @@ from django.db import models
 
 
 class UserData(models.Model):
+    queryId = models.AutoField(primary_key=True)
+    userId = models.IntegerField()
     name = models.CharField(max_length=255)
     age = models.IntegerField()
     gender = models.CharField(max_length=255)

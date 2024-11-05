@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 
 class HealthPlanSerializer(serializers.Serializer):
+    userId = serializers.IntegerField(required=True)
     name = serializers.CharField(required=True)
     age = serializers.IntegerField(required=True)
     gender = serializers.CharField(required=False)
@@ -23,6 +24,7 @@ class ModifiedHealthPlanSerializer(serializers.Serializer):
 
 
 class GuidedHealthPlanSerializer(serializers.Serializer):
+    userId = serializers.IntegerField(required=True)
     name = serializers.CharField(required=True)
     age = serializers.IntegerField(required=True)
     gender = serializers.CharField(required=False)
