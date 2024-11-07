@@ -1,10 +1,15 @@
 import json
 import os
 from datetime import datetime
+from pprint import pprint
+
+from django.utils import timezone
 from langchain.adapters.openai import convert_openai_messages
 from langchain_openai import ChatOpenAI
 from tavily import TavilyClient
-from pprint import pprint
+
+from agents.utils import count_characters_in_json
+from analytics.components import populate_workflow_db
 
 
 class FitnessAgent:
@@ -15,6 +20,8 @@ class FitnessAgent:
         self.current_workout_plan = None
         self.adjusted_workout_plan = None
         self.feedback = None
+        self.agent_name = "fitness"
+        self.tokens_produced = 0
 
     def create_workout_plan(self):
         context = self.tavily_client.get_search_context(
@@ -89,16 +96,27 @@ class FitnessAgent:
         return result
 
     def start(self, feedback=None):
+        startTime = timezone.now()
         return_data = dict
         if not feedback:
             self.current_workout_plan = self.create_workout_plan()
+            endTime = timezone.now()
+            self.tokens_produced = (
+                count_characters_in_json(self.current_workout_plan) // 4
+            )
             return_data.update({"current_workout_plan": self.current_workout_plan})
 
         else:
             self.adjusted_workout_plan = self.adjust_workout_plan(
                 feedback, self.current_workout_plan
             )
+            self.tokens_produced = (
+                count_characters_in_json(self.adjusted_workout_plan) // 4
+            )
             return_data.update({"current_workout_plan": self.adjusted_workout_plan})
+        populate_workflow_db(
+            self.user_data, self.agent_name, self.tokens_produced, startTime, endTime
+        )
         return return_data
 
 

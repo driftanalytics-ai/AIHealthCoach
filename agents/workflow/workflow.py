@@ -5,10 +5,11 @@ from langgraph.graph import Graph
 
 from agents.workflow.agents import (
     FitnessAgent,
-    NutritionAgent,
     MentalHealthAgent,
+    NutritionAgent,
     ProgressTrackingAgent,
 )
+from analytics.components import populate_query_db
 
 
 class Workflow:
@@ -56,7 +57,9 @@ class Workflow:
 
         # Compile the graph
         chain = graph.compile()
-
+        # call to the components.py function - query db
+        id = populate_query_db(self.user_data, graph)
+        self.user_data["query_id"] = id
         # Execute the graph for each query in parallel
         with ThreadPoolExecutor() as executor:
             results = list(executor.map(lambda _: chain.invoke({}), [{}]))
