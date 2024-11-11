@@ -68,6 +68,7 @@ class Graph(models.Model):
 class Query(models.Model):
     id = models.AutoField(primary_key=True)
     # userdata = models.OneToOneField(UserData, on_delete=models.CASCADE)
+    completed = models.BooleanField(default=False)
     query_text = models.TextField()  # Stores the query text
     timestamp = models.DateTimeField(
         auto_now_add=True

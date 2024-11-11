@@ -37,9 +37,13 @@ def populate_workflow_db(
     query_instance, created = Query.objects.get_or_create(
         id=user_data_instance.get("query_id", 1)
     )
+
     agent, created = Agent.objects.get_or_create(name=agent_name)
     if created:
         agent.runtime_stats = Stats.objects.create()
+    if agent.name == "progress_report":
+        query_instance.completed = True
+        query_instance.save()
     time_taken = (endTime - startTime).total_seconds()
     update_stats(agent.runtime_stats, time_taken)
     update_stats(agent.token_usage_stats, tokens)
