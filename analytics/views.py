@@ -72,11 +72,11 @@ class QueryViewSet(ReadOnlyModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
-
-        for agent in serializer.data["graph"]["nodes"]:
-            if agent.get("name") == "__end__":
-                query["graph"]["nodes"].append(
-                    query["graph"]["nodes"].pop(query["graph"]["nodes"].index(agent))
-                )
+        for query in serializer.data:
+            for agent in serializer.data["graph"]["nodes"]:
+                if agent.get("name") == "__end__":
+                    query["graph"]["nodes"].append(
+                        query["graph"]["nodes"].pop(query["graph"]["nodes"].index(agent))
+                    )
                 break
         return Response(serializer.data)
