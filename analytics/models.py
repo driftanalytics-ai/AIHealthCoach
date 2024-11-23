@@ -60,7 +60,7 @@ class Edge(models.Model):
 
 class Graph(models.Model):
     id = models.AutoField(primary_key=True)
-    nodes = models.ManyToManyField(Agent)
+    agents = models.ManyToManyField(Agent)
     edges = models.ManyToManyField(Edge)
     hash = models.CharField(max_length=64, unique=True)
 

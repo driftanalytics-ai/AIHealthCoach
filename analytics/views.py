@@ -59,11 +59,11 @@ class QueryViewSet(ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
 
         for query in serializer.data:
-            for agent in query["graph"]["nodes"]:
+            for agent in query["graph"]["agents"]:
                 if agent.get("name") == "__end__":
-                    query["graph"]["nodes"].append(
-                        query["graph"]["nodes"].pop(
-                            query["graph"]["nodes"].index(agent)
+                    query["graph"]["agents"].append(
+                        query["graph"]["agents"].pop(
+                            query["graph"]["agents"].index(agent)
                         )
                     )
                     break
@@ -73,10 +73,10 @@ class QueryViewSet(ReadOnlyModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
 
-        for agent in serializer.data["graph"]["nodes"]:
+        for agent in serializer.data["graph"]["agents"]:
             if agent.get("name") == "__end__":
-                query["graph"]["nodes"].append(
-                    query["graph"]["nodes"].pop(query["graph"]["nodes"].index(agent))
+                query["graph"]["agents"].append(
+                    query["graph"]["agents"].pop(query["graph"]["agents"].index(agent))
                 )
                 break
         return Response(serializer.data)

@@ -13,7 +13,7 @@ def get_master_graph():
         agent_queries.order_by("startTimestamp")
         for aq in agent_queries:
             print(aq.agent.name)
-        agents |= query.graph.nodes.get_queryset()
+        agents |= query.graph.agents.get_queryset()
         edges |= query.graph.edges.get_queryset()
         temp_edge_interactions = get_interactions(agent_queries, query.graph.edges)
         for k in temp_edge_interactions:

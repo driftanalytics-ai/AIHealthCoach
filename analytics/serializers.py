@@ -28,12 +28,12 @@ class EdgeSerializer(ModelSerializer):
 
 
 class GraphSerializer(ModelSerializer):
-    nodes = AgentSerializer(many=True)
+    agents = AgentSerializer(many=True)
     edges = EdgeSerializer(many=True)
 
     class Meta:
         model = Graph
-        fields = ["id", "nodes", "edges"]
+        fields = ["id", "agents", "edges"]
 
 
 class AgentQuerySerializer(ModelSerializer):

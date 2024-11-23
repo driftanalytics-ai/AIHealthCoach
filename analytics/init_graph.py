@@ -47,7 +47,7 @@ def make_graph(graph: Graph):
     if not created:
         return graph_our
     for node in agents:
-        graph_our.nodes.add(node)
+        graph_our.agents.add(node)
     for edge in edges:
         graph_our.edges.add(edge)
     graph_our.save()
