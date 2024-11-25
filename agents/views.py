@@ -1,5 +1,9 @@
 from pprint import pprint
 
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
+
 from agents.models import HealthPlan, UserData
 
 # Create your views here.
@@ -10,9 +14,6 @@ from agents.serializers import (
 )
 from agents.workflow import Workflow
 from analytics.decorators.query import QueryTracker
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
 
 
 class Agents(GenericViewSet):
@@ -47,6 +48,41 @@ class Agents(GenericViewSet):
         try:
             workflow = Workflow(user_data=validated_data)
             initial_plans = workflow.start_workflow(**kwargs)
+            result["message"] = initial_plans
+
+            # Save initial plans to the HealthPlan model
+            health_plan_entry = HealthPlan.objects.create(
+                user=user_data_entry,
+                initial_workout_plan=initial_plans["workout_plan"],
+                initial_meal_plan=initial_plans["meal_plan"],
+                initial_mental_health_tips=initial_plans["wellness_tips"],
+            )
+            return Response(data=result, status=status.HTTP_200_OK)
+        except Exception as e:
+            result["error"] = str(e)
+            return Response(data=result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @QueryTracker.track_query("health_plan")
+    def health_plan2(self, request, **kwargs):
+        """One call to this api intiates the full worklow and returns the final report for the user based on
+        user_data"""
+        result = {"message": None, "error": None}
+        serializer = HealthPlanSerializer
+        serializer = serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+        print("request data: \n")
+        pprint(validated_data)
+
+        try:
+            user_data_entry = UserData.objects.create(**validated_data)
+        except Exception as e:
+            result["error"] = str(e)
+            return Response(data=result, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        try:
+            workflow = Workflow(user_data=validated_data)
+            initial_plans = workflow.start_workflow2(**kwargs)
             result["message"] = initial_plans
 
             # Save initial plans to the HealthPlan model

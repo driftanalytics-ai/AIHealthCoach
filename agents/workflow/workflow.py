@@ -20,6 +20,59 @@ class Workflow:
         feedback = input(f"Provide feedback on your {agent_name} plan\n")
         return feedback
 
+    @MultiAgentTracker.track_graph("Graph2")
+    def start_workflow2(self, **kwargs):
+        print("User data: \n")
+        print(self.user_data)
+
+        self.user_data["query_id"] = id
+        # Initialize agents
+        fitness_agent = FitnessAgent(self.user_data)
+        nutrition_agent = NutritionAgent(self.user_data)
+        mental_health_agent = MentalHealthAgent(self.user_data)
+        progress_agent = ProgressTrackingAgent(self.user_data)
+
+        # Define a LangGraph graph
+        graph = Graph()
+
+        # Add nodes for each agent task
+        graph.add_node("fitness", lambda _: fitness_agent.start(**kwargs))
+        graph.add_node("nutrition", lambda _: nutrition_agent.start(**kwargs))
+        graph.add_node("mental_health", lambda _: mental_health_agent.start(**kwargs))
+        graph.add_node(
+            "progress_report",
+            lambda _: progress_agent.track_progress(
+                fitness_agent.current_workout_plan,
+                nutrition_agent.current_meal_plan,
+                mental_health_agent.wellness_tips,
+                **kwargs,
+            ),
+        )
+
+        # Add edges for initial plan creation and feedback collection
+        graph.add_edge("fitness", "mental_health")
+        graph.add_edge("mental_health", "nutrition")
+        graph.add_edge("nutrition", "progress_report")
+
+        # Set up start and end nodes
+        graph.set_entry_point("fitness")
+        graph.set_finish_point("progress_report")
+
+        # Compile the graph
+        chain = graph.compile()
+        # call to the components.py function - query db
+        # Execute the graph for each query in parallel
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(lambda _: chain.invoke({}), [{}]))
+        print("results", results)
+        return_data = {
+            "workout_plan": results[0]["fitness"]["workout_plan"],
+            "meal_plan": results[0]["nutrition"]["meal_plan"],
+            "wellness_tips": results[0]["mental_health"]["wellness_tips"],
+        }
+
+        return return_data
+
     @MultiAgentTracker.track_graph("Graph1")
     def start_workflow(self, **kwargs):
         print("User data: \n")
