@@ -1,10 +1,9 @@
 import json
 import os
-from datetime import datetime
 from pprint import pprint
 
 from agents.utils import count_characters_in_json
-from analytics.components import populate_workflow_db
+from analytics.decorators.agent import AgentTrackers
 from django.utils import timezone
 from langchain.adapters.openai import convert_openai_messages
 from langchain_openai import ChatOpenAI
@@ -22,7 +21,8 @@ class FitnessAgent:
         self.agent_name = "fitness"
         self.tokens_produced = 0
 
-    def create_workout_plan(self):
+    @AgentTrackers.track_agent("fitness_agent")
+    def create_workout_plan(self, **kwargs):
         # context = self.tavily_client.get_search_context(
         #     query=f"workout plan for {self.user_data['age']} year old, {self.user_data['weight']} kg {self.user_data.get('gender', '')} person",
         #     search_depth="advanced",
@@ -43,7 +43,6 @@ class FitnessAgent:
                 f'{{"workout_plan": ["Exercise 1", "Exercise 2", "Exercise 3", "Exercise 4"]}}\n',
             },
         ]
-
         lc_messages = convert_openai_messages(prompt)
         optional_params = {"response_format": {"type": "json_object"}}
         response = (
@@ -58,11 +57,10 @@ class FitnessAgent:
         pprint(result)
         return result
 
-    def adjust_workout_plan(self, feedback, current_workout_plan):
+    def adjust_workout_plan(self, feedback, current_workout_plan, **kwargs):
         context = self.tavily_client.get_search_context(
             query=f"adjust workout plan based on feedback: {feedback}"
         )
-
         prompt = [
             {
                 "role": "system",
@@ -93,33 +91,19 @@ class FitnessAgent:
         pprint(result)
         return result
 
-    def start(self, feedback=None):
-        startTime = timezone.now()
+    def start(self, feedback=None, **kwargs):
+        print("fitness start kwargs", kwargs)
         return_data = dict
         if not feedback:
-            self.current_workout_plan = self.create_workout_plan()
-            endTime = timezone.now()
-            self.tokens_produced = (
-                count_characters_in_json(self.current_workout_plan) // 4
-            )
+            self.current_workout_plan = self.create_workout_plan(**kwargs)
             return_data.update({"current_workout_plan": self.current_workout_plan})
 
         else:
             self.adjusted_workout_plan = self.adjust_workout_plan(
-                feedback, self.current_workout_plan
-            )
-            self.tokens_produced = (
-                count_characters_in_json(self.adjusted_workout_plan) // 4
+                feedback, self.current_workout_plan, **kwargs
             )
             return_data.update({"current_workout_plan": self.adjusted_workout_plan})
-        populate_workflow_db(
-            self.user_data,
-            self.agent_name,
-            self.tokens_produced,
-            startTime,
-            endTime,
-            self.current_workout_plan,
-        )
+        print("no exception in fitness")
         return return_data
 
 

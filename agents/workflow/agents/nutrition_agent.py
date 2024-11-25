@@ -3,7 +3,7 @@ import os
 from pprint import pprint
 
 from agents.utils import count_characters_in_json
-from analytics.components import populate_workflow_db
+from analytics.decorators.agent import AgentTrackers
 from django.utils import timezone
 from langchain.adapters.openai import convert_openai_messages
 from langchain_openai import ChatOpenAI
@@ -20,7 +20,8 @@ class NutritionAgent:
         self.agent_name = "nutrition"
         self.tokens_produced = 0
 
-    def create_meal_plan(self):
+    @AgentTrackers.track_agent("nutrition")
+    def create_meal_plan(self, **kwargs):
         # context = self.tavily_client.get_search_context(
         #     query=f"meal plan for {self.user_data.get('gender', '')} person who is {self.user_data['age']} year old, weighs {self.user_data['weight']} kg person with dietary preferences: {self.user_data['dietary_preferences']}",
         #     search_depth="advanced",
@@ -90,30 +91,16 @@ class NutritionAgent:
         pprint(result)
         return result
 
-    def start(self, feedback=None):
-        startTime = timezone.now()
-        # return_data = {"current_meal_plan": None, "adjusted_meal_plan": None}
+    def start(self, feedback=None, **kwargs):
         return_data = dict
         if not feedback:
-            self.current_meal_plan = self.create_meal_plan()
-            endTime = timezone.now()
-            self.tokens_produced = count_characters_in_json(self.current_meal_plan) // 4
+            self.current_meal_plan = self.create_meal_plan(**kwargs)
             return_data.update({"current_meal_plan": self.current_meal_plan})
 
         else:
             self.adjusted_meal_plan = self.adjust_meal_plan(feedback)
-            self.tokens_produced = (
-                count_characters_in_json(self.adjusted_meal_plan) // 4
-            )
             return_data.update({"current_meal_plan": self.adjusted_meal_plan})
-        populate_workflow_db(
-            self.user_data,
-            self.agent_name,
-            self.tokens_produced,
-            startTime,
-            endTime,
-            self.current_meal_plan,
-        )
+        pprint(return_data)
         return return_data
 
 

@@ -23,6 +23,24 @@ class Stats(models.Model):
     sum_val = models.FloatField(default=0)
     sum_squares_val = models.FloatField(default=0)
 
+    def update_stats(self, val: float):
+        self.count += 1
+
+        self.sum_val += val
+        self.sum_squares_val += val**2
+        # Update average
+        self.average = self.sum_val / self.count
+
+        # Update min/max
+        self.min_val = min(self.min_val, val)
+        self.max_val = max(self.max_val, val)
+
+        # Update variance and standard deviation
+        mean = float(self.average)
+        variance = (float(self.sum_squares_val) / float(self.count)) - (mean * mean)
+        self.standard_deviation = float(float(variance) ** 0.5)
+        self.save()
+
 
 def get_default_stats():
     return Stats.objects.create()
@@ -62,6 +80,7 @@ class Graph(models.Model):
     id = models.AutoField(primary_key=True)
     nodes = models.ManyToManyField(Agent)
     edges = models.ManyToManyField(Edge)
+    name = models.CharField(max_length=100, unique=True)
     hash = models.CharField(max_length=64, unique=True)
 
 
@@ -74,6 +93,7 @@ class Query(models.Model):
         auto_now_add=True
     )  # Automatically sets the current timestamp
     graph = models.ForeignKey(Graph, on_delete=models.CASCADE, null=True)
+    request_body = models.TextField(null=True)
 
     # total tokens
     @property
@@ -91,3 +111,5 @@ class AgentQuery(models.Model):
     response = models.TextField(default="DEFAULT_RESPONSE")
     startTimestamp = models.DateTimeField()
     endTimestamp = models.DateTimeField()
+    metadata = models.TextField(null=True)
+    completed = models.BooleanField(default=False)

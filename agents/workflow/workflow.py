@@ -7,7 +7,7 @@ from agents.workflow.agents import (
     NutritionAgent,
     ProgressTrackingAgent,
 )
-from analytics.components import populate_query_db, update_graph
+from analytics.decorators.graph import MultiAgentTracker
 from langgraph.graph import Graph
 
 
@@ -19,11 +19,11 @@ class Workflow:
         feedback = input(f"Provide feedback on your {agent_name} plan\n")
         return feedback
 
-    def start_workflow(self):
+    @MultiAgentTracker.track_graph("Graph1")
+    def start_workflow(self, **kwargs):
         print("User data: \n")
         print(self.user_data)
 
-        id = populate_query_db(self.user_data)
         self.user_data["query_id"] = id
         # Initialize agents
         fitness_agent = FitnessAgent(self.user_data)
@@ -35,15 +35,16 @@ class Workflow:
         graph = Graph()
 
         # Add nodes for each agent task
-        graph.add_node("fitness", lambda _: fitness_agent.start())
-        graph.add_node("nutrition", lambda _: nutrition_agent.start())
-        graph.add_node("mental_health", lambda _: mental_health_agent.start())
+        graph.add_node("fitness", lambda _: fitness_agent.start(**kwargs))
+        graph.add_node("nutrition", lambda _: nutrition_agent.start(**kwargs))
+        graph.add_node("mental_health", lambda _: mental_health_agent.start(**kwargs))
         graph.add_node(
             "progress_report",
             lambda _: progress_agent.track_progress(
                 fitness_agent.current_workout_plan,
                 nutrition_agent.current_meal_plan,
                 mental_health_agent.wellness_tips,
+                **kwargs,
             ),
         )
 
@@ -58,12 +59,11 @@ class Workflow:
 
         # Compile the graph
         chain = graph.compile()
-        update_graph(self.user_data["query_id"], graph)
         # call to the components.py function - query db
         # Execute the graph for each query in parallel
         with ThreadPoolExecutor() as executor:
             results = list(executor.map(lambda _: chain.invoke({}), [{}]))
-
+        print("results", results)
         return_data = {
             "workout_plan": results[0]["fitness"]["workout_plan"],
             "meal_plan": results[0]["nutrition"]["meal_plan"],
