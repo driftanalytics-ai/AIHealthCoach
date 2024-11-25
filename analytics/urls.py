@@ -1,9 +1,10 @@
-from analytics.views import QueryViewSet, graph_view, metric_info
+from analytics.views import QueryViewSet, graph_view, metric_info, AgentView
 from django.urls import include, path
 from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter()
 router.register("query", QueryViewSet)
+router.register("agent", AgentView)
 
 urlpatterns = [
     path("graph/", graph_view),
