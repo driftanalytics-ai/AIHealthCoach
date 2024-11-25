@@ -1,8 +1,10 @@
 from django.urls import path
+
 from agents.views import Agents
 
 urlpatterns = [
     path("health_plan/", Agents.as_view({"post": "health_plan"})),
+    path("health_plan2/", Agents.as_view({"post": "health_plan2"})),
     path(
         "modified_health_plan/",
         Agents.as_view({"post": "modified_health_plan"}),
