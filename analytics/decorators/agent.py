@@ -73,6 +73,7 @@ def update_agent_query(
     metadata,
 ):
     query, _ = Query.objects.get_or_create(id=qid)
+    print(agent_name, query.graph, "agent name graph")
     agent, created = Agent.objects.get_or_create(name=agent_name)
     if created:
         agent.token_usage_stats = Stats.objects.create()

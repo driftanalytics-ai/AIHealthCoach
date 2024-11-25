@@ -1,6 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from pprint import pprint
 
+from langgraph.graph import Graph
+
 from agents.workflow.agents import (
     FitnessAgent,
     MentalHealthAgent,
@@ -8,7 +10,6 @@ from agents.workflow.agents import (
     ProgressTrackingAgent,
 )
 from analytics.decorators.graph import MultiAgentTracker
-from langgraph.graph import Graph
 
 
 class Workflow:
