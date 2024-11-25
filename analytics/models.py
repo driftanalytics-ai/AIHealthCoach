@@ -114,3 +114,4 @@ class AgentQuery(models.Model):
     startTimestamp = models.DateTimeField()
     endTimestamp = models.DateTimeField()
     metadata = models.TextField(null=True)
+    completed = models.BooleanField(default=False)

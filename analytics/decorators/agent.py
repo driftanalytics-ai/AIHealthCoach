@@ -88,6 +88,7 @@ def update_agent_query(
         startTimestamp=datetime.fromtimestamp(int(start_timestamp)),
         endTimestamp=datetime.fromtimestamp((int(end_timestamp))),
         response=response,
+        completed=completed,
         metadata=metadata,
     )
     print("update complete")
