@@ -1,4 +1,7 @@
 # Create your views here.
+from analytics.models import AgentQuery, Query, Agent
+from analytics.serializers import AgentSerializer, EdgeSerializer, QuerySerializer, DetailedAgentSerializer
+from analytics.utils.graph import get_master_graph
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework.views import Response
@@ -50,11 +53,9 @@ def graph_view(request: HttpRequest):
         response = JsonResponse({"agents": agent_data, "edges": edge_data})
         return response
 
-
-class AgentView(ReadOnlyModelViewSet):
+class DetailedAgentView(ReadOnlyModelViewSet):
     queryset = Agent.objects.all()
-    serializer_class = AgentSerializer
-
+    serializer_class = DetailedAgentSerializer
 
 class GraphViewSet(ReadOnlyModelViewSet):
     queryset = Graph.objects.all()
