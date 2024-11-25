@@ -41,7 +41,7 @@ class DetailedAgentSerializer(ModelSerializer):
 class AgentQuerySerializer(ModelSerializer):
     class Meta:
         model = AgentQuery
-        fields = "__all__"  # Or specify the fields you want to include
+        fields = ["pk", "name", "model_name", "runtime_stats", "token_usage_stats"]
 
 
 class EdgeSerializer(ModelSerializer):
@@ -75,6 +75,8 @@ class AgentQuerySerializer(ModelSerializer):
             "startTimestamp",
             "endTimestamp",
             "response",
+            "metadata",
+            "completed",
         ]
 
 
@@ -89,11 +91,13 @@ class QuerySerializer(ModelSerializer):
         fields = [
             "pk",
             "agent_queries",
-            "query_text",
+            "request_body",
+            "response",
             "timestamp",
             "graph",
             "total_tokens",
             "enriched_edges",
+            "completed",
         ]
         depth = 2
 
@@ -148,6 +152,7 @@ class QuerySerializer(ModelSerializer):
 class EnrichedGraphSerialier(ModelSerializer):
     queries = SerializerMethodField()
     edges = EdgeSerializer(many=True)
+    nodes = AgentSerializer(many=True)
 
     class Meta:
         model = Graph
