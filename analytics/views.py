@@ -7,6 +7,16 @@ from django.shortcuts import render
 from rest_framework.views import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from analytics.models import Agent, AgentQuery, Graph, Query
+from analytics.serializers import (
+    AgentSerializer,
+    EdgeSerializer,
+    EnrichedGraphSerialier,
+    GraphSerializer,
+    QuerySerializer,
+)
+from analytics.utils.graph import get_master_graph
+
 
 def metric_info(request: HttpRequest):
     if request.method == "GET":
@@ -46,6 +56,26 @@ def graph_view(request: HttpRequest):
 class DetailedAgentView(ReadOnlyModelViewSet):
     queryset = Agent.objects.all()
     serializer_class = DetailedAgentSerializer
+
+class GraphViewSet(ReadOnlyModelViewSet):
+    queryset = Graph.objects.all()
+    serializer_class = GraphSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+
+        instance = self.get_object()
+        serializer = EnrichedGraphSerialier(instance)
+        ed_total_interactions = dict()
+        for q in serializer.data["queries"]:
+            for ed in q["graph"]["edges"]:
+                if ed["pk"] in ed_total_interactions.keys():
+                    ed_total_interactions[ed["pk"]] += ed["interactions"]
+                else:
+                    ed_total_interactions[ed["pk"]] = ed["interactions"]
+        for ed in serializer.data["edges"]:
+            ed["interactions"] = ed_total_interactions.get(ed["pk"], 0)
+        return Response(serializer.data)
+
 
 class QueryViewSet(ReadOnlyModelViewSet):
     queryset = Query.objects.all()
