@@ -25,4 +25,8 @@ def attach_graph(query_id, graph_name):
     query, _ = Query.objects.get_or_create(id=query_id)
     graph, _ = Graph.objects.get_or_create(name=graph_name)
     query.graph = graph
-    return query.save()
+    query.save()
+
+    print(query, query.graph, "following query graph attached")
+
+    return True

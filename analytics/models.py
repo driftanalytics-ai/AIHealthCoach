@@ -1,8 +1,9 @@
-from agents.models import UserData
 from django.contrib.auth.models import (
     User,
 )  # Assumes you're using Django's default User model
 from django.db import models
+
+from agents.models import UserData
 
 # todo()
 # 1. Average response time of agent
@@ -94,6 +95,7 @@ class Query(models.Model):
     )  # Automatically sets the current timestamp
     graph = models.ForeignKey(Graph, on_delete=models.CASCADE, null=True)
     request_body = models.TextField(null=True)
+    response = models.TextField(null=True)
 
     # total tokens
     @property
@@ -108,7 +110,7 @@ class AgentQuery(models.Model):
     )  # Related Query
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE)  # Node ID
     token_usage = models.IntegerField()  # Token usage for this node
-    response = models.TextField(default="DEFAULT_RESPONSE")
+    response = models.TextField(default="DEFAULT_RESPONSE", null=True)
     startTimestamp = models.DateTimeField()
     endTimestamp = models.DateTimeField()
     metadata = models.TextField(null=True)
