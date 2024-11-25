@@ -2,7 +2,7 @@
 from agents.models import UserData
 from django.shortcuts import get_object_or_404
 
-from .init_graph import make_graph
+from .init_graph import get_or_create_graph
 from .models import Agent, AgentQuery, Query, Stats
 
 
@@ -23,7 +23,7 @@ def populate_query_db(user_data_instance):
 
 
 def update_graph(id, graph):
-    gr = make_graph(graph)
+    gr = get_or_create_graph(graph)
     query = Query.objects.get(id=id)
     query.graph = gr
     query.save()

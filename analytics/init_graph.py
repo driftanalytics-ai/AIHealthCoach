@@ -2,12 +2,13 @@ from hashlib import sha256
 
 from langgraph.graph import Graph
 
+from .constants import DEFAULT_GRAPH_USE_ID
 from .models import Agent, Edge
 from .models import Graph as GraphModel
 from .models import Stats
 
 
-def make_graph(graph: Graph):
+def get_or_create_graph(graph: Graph, name=DEFAULT_GRAPH_USE_ID):
     start_agent, created = Agent.objects.get_or_create(name="__start__")
     if created:
         start_agent.runtime_stats = Stats.objects.create()
@@ -50,9 +51,23 @@ def make_graph(graph: Graph):
         graph_our.nodes.add(node)
     for edge in edges:
         graph_our.edges.add(edge)
+    if name == DEFAULT_GRAPH_USE_ID:
+        name = str(graph_our.id)
+    graph_our.name = name
     graph_our.save()
     for node in agents:
         node.save()
     for edge in edges:
         edge.save()
     return graph_our
+
+
+def get_graph_name(graph: Graph):
+    graph = get_or_create_graph(graph)
+    return graph.name
+
+
+def set_graph_name(graph: Graph, name: str):
+    graph = get_or_create_graph(graph)
+    graph.name = name
+    return graph.save()

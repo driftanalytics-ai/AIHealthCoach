@@ -3,7 +3,7 @@ import os
 from pprint import pprint
 
 from agents.utils import count_characters_in_json
-from analytics.components import populate_workflow_db
+from analytics.decorators.agent import AgentTrackers
 from django.utils import timezone
 from langchain.adapters.openai import convert_openai_messages
 from langchain_openai import ChatOpenAI
@@ -19,22 +19,13 @@ class ProgressTrackingAgent:
         self.agent_name = "progress_report"
         self.tokens_produced = 0
 
+    @AgentTrackers.track_agent("progress_report")
     def track_progress(
-        self, fitness_feedback, nutrition_feedback, mental_health_feedback
+        self, fitness_feedback, nutrition_feedback, mental_health_feedback, **kwargs
     ):
-        startTime = timezone.now()
         self.progress["fitness"] = fitness_feedback
         self.progress["nutrition"] = nutrition_feedback
         self.progress["mental_health"] = mental_health_feedback
-        endTime = timezone.now()
-        populate_workflow_db(
-            self.user_data,
-            self.agent_name,
-            self.tokens_produced,
-            startTime,
-            endTime,
-            self.progress,
-        )
         return self.progress
 
     def generate_report(self):

@@ -96,7 +96,7 @@ def make_requests(url, headers, num_requests=100):
 
 
 # URL and headers
-url = "https://driftai.pythonanywhere.com/agents/health_plan/"
+url = "https://backend.ebonwinglabs.com/agents/health_plan/"
 headers = {"Content-Type": "application/json"}
 
 # Run the script

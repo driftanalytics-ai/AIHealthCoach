@@ -1,9 +1,5 @@
 from pprint import pprint
 
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
-
 from agents.models import HealthPlan, UserData
 
 # Create your views here.
@@ -13,7 +9,10 @@ from agents.serializers import (
     ModifiedHealthPlanSerializer,
 )
 from agents.workflow import Workflow
-from analytics.components import populate_query_db
+from analytics.decorators.query import QueryTracker
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
 
 
 class Agents(GenericViewSet):
@@ -27,7 +26,8 @@ class Agents(GenericViewSet):
             return GuidedHealthPlanSerializer
         return HealthPlanSerializer
 
-    def health_plan(self, request):
+    @QueryTracker.track_query("health_plan")
+    def health_plan(self, request, **kwargs):
         """One call to this api intiates the full worklow and returns the final report for the user based on
         user_data"""
         result = {"message": None, "error": None}
