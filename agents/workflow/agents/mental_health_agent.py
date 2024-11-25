@@ -77,7 +77,7 @@ class MentalHealthAgent:
 
         return_data = dict
         if not feedback:
-            self.wellness_tips = self.provide_wellness_tips()
+            self.wellness_tips = self.provide_wellness_tips(**kwargs)
             return_data.update({"wellness_tip": self.wellness_tips})
         else:
             self.wellness_tips = self.provide_wellness_tips(feedback)

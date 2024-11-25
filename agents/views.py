@@ -46,7 +46,7 @@ class Agents(GenericViewSet):
 
         try:
             workflow = Workflow(user_data=validated_data)
-            initial_plans = workflow.start_workflow()
+            initial_plans = workflow.start_workflow(**kwargs)
             result["message"] = initial_plans
 
             # Save initial plans to the HealthPlan model

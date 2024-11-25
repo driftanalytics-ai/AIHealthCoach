@@ -92,6 +92,7 @@ class FitnessAgent:
         return result
 
     def start(self, feedback=None, **kwargs):
+        print("fitness start kwargs", kwargs)
         return_data = dict
         if not feedback:
             self.current_workout_plan = self.create_workout_plan(**kwargs)

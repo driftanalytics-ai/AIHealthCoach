@@ -80,7 +80,6 @@ def update_agent_query(
     tokens = count_characters_in_json(response)
     agent.runtime_stats.update_stats(end_timestamp - start_timestamp)
     agent.token_usage_stats.update_stats(float(tokens))
-    print("creating agent query")
     agent_query = AgentQuery.objects.create(
         queryId=query,
         agent=agent,
@@ -91,4 +90,4 @@ def update_agent_query(
         completed=completed,
         metadata=metadata,
     )
-    print("update complete")
+    agent_query.save()

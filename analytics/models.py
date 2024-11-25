@@ -24,7 +24,6 @@ class Stats(models.Model):
     sum_squares_val = models.FloatField(default=0)
 
     def update_stats(self, val: float):
-        print("us start")
         self.count += 1
 
         self.sum_val += val
@@ -41,7 +40,6 @@ class Stats(models.Model):
         variance = (float(self.sum_squares_val) / float(self.count)) - (mean * mean)
         self.standard_deviation = float(float(variance) ** 0.5)
         self.save()
-        print("us end")
 
 
 def get_default_stats():
