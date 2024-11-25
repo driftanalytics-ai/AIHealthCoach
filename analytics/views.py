@@ -1,7 +1,4 @@
 # Create your views here.
-from analytics.models import AgentQuery, Query, Agent
-from analytics.serializers import AgentSerializer, EdgeSerializer, QuerySerializer, DetailedAgentSerializer
-from analytics.utils.graph import get_master_graph
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework.views import Response
@@ -10,6 +7,7 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from analytics.models import Agent, AgentQuery, Graph, Query
 from analytics.serializers import (
     AgentSerializer,
+    DetailedAgentSerializer,
     EdgeSerializer,
     EnrichedGraphSerialier,
     GraphSerializer,
@@ -53,13 +51,33 @@ def graph_view(request: HttpRequest):
         response = JsonResponse({"agents": agent_data, "edges": edge_data})
         return response
 
+
 class DetailedAgentView(ReadOnlyModelViewSet):
     queryset = Agent.objects.all()
     serializer_class = DetailedAgentSerializer
 
+
 class GraphViewSet(ReadOnlyModelViewSet):
     queryset = Graph.objects.all()
     serializer_class = GraphSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset()).order_by("-id")
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        for graph in serializer.data:
+            for agent in graph["nodes"]:
+                if agent.get("name") == "__end__":
+                    graph["nodes"].append(
+                        graph["nodes"].pop(graph["nodes"].index(agent))
+                    )
+                    break
+        return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
 
@@ -74,6 +92,12 @@ class GraphViewSet(ReadOnlyModelViewSet):
                     ed_total_interactions[ed["pk"]] = ed["interactions"]
         for ed in serializer.data["edges"]:
             ed["interactions"] = ed_total_interactions.get(ed["pk"], 0)
+        for agent in serializer.data["nodes"]:
+            if agent.get("name") == "__end__":
+                serializer.data["nodes"].append(
+                    serializer.data["nodes"].pop(serializer.data["nodes"].index(agent))
+                )
+                break
         return Response(serializer.data)
 
 
