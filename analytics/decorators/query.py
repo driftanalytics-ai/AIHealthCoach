@@ -14,7 +14,7 @@ class QueryTracker:
         def decorator(func):
 
             query = Query.objects.create()
-            start_agent = Agent.objects.get(name="__start__")
+            start_agent, _ = Agent.objects.get_or_create(name="__start__")
             first_agent_query = AgentQuery.objects.create(
                 queryId=query,
                 agent=start_agent,
@@ -44,7 +44,7 @@ class QueryTracker:
                 try:
                     response = func(*args, **kwargs)
                 except Exception as e:
-                    end_agent = Agent.objects.get(name="__end__")
+                    end_agent, _ = Agent.objects.get_or_create(name="__end__")
                     query.refresh_from_db()
                     last_agent_query = AgentQuery.objects.create(
                         queryId=query,
@@ -73,7 +73,7 @@ class QueryTracker:
                 completed &= aq.completed
             query.refresh_from_db()
             query.completed = completed
-            end_agent = Agent.objects.get(name="__end__")
+            end_agent, _ = Agent.objects.get_or_create(name="__end__")
             last_agent_query = AgentQuery.objects.create(
                 queryId=query,
                 agent=end_agent,

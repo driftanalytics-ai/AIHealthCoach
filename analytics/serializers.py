@@ -17,22 +17,32 @@ class AgentSerializer(ModelSerializer):
         fields = ["pk", "name", "model_name", "runtime_stats", "token_usage_stats"]
         depth = 2
 
+
 class DetailedAgentSerializer(ModelSerializer):
     agent_queries = SerializerMethodField()
 
     class Meta:
         model = Agent
-        fields = ["pk", "name", "model_name", "runtime_stats", "token_usage_stats", "agent_queries"]
+        fields = [
+            "pk",
+            "name",
+            "model_name",
+            "runtime_stats",
+            "token_usage_stats",
+            "agent_queries",
+        ]
         depth = 2
-    
+
     def get_agent_queries(self, obj):
         agent_queries = AgentQuery.objects.filter(agent=obj)
         return AgentQuerySerializer(agent_queries, many=True).data
+
 
 class AgentQuerySerializer(ModelSerializer):
     class Meta:
         model = AgentQuery
         fields = "__all__"  # Or specify the fields you want to include
+
 
 class EdgeSerializer(ModelSerializer):
     start = AgentSerializer()
@@ -50,7 +60,7 @@ class GraphSerializer(ModelSerializer):
 
     class Meta:
         model = Graph
-        fields = ["id", "nodes", "edges", "name"]
+        fields = ["pk", "nodes", "edges", "name"]
 
 
 class AgentQuerySerializer(ModelSerializer):
@@ -77,7 +87,7 @@ class QuerySerializer(ModelSerializer):
     class Meta:
         model = Query
         fields = [
-            "id",
+            "pk",
             "agent_queries",
             "query_text",
             "timestamp",
@@ -141,7 +151,7 @@ class EnrichedGraphSerialier(ModelSerializer):
 
     class Meta:
         model = Graph
-        fields = ["id", "nodes", "edges", "name", "queries"]
+        fields = ["pk", "nodes", "edges", "name", "queries"]
         depth = 2
 
     def get_queries(self, obj: Graph):

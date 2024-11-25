@@ -52,7 +52,6 @@ def get_default_stats_id():
 
 
 class Agent(models.Model):
-    id = models.AutoField(primary_key=True)
     name = models.CharField(unique=True, max_length=100)
     model_name = models.CharField(max_length=20, default="GPT-4o")
     runtime_stats = models.ForeignKey(
@@ -70,7 +69,6 @@ class Agent(models.Model):
 
 
 class Edge(models.Model):
-    id = models.AutoField(primary_key=True)
     start = models.ForeignKey(
         Agent, on_delete=models.CASCADE, related_name="from_agent"
     )
@@ -78,7 +76,6 @@ class Edge(models.Model):
 
 
 class Graph(models.Model):
-    id = models.AutoField(primary_key=True)
     nodes = models.ManyToManyField(Agent)
     edges = models.ManyToManyField(Edge)
     name = models.CharField(max_length=100, unique=True)
@@ -86,7 +83,6 @@ class Graph(models.Model):
 
 
 class Query(models.Model):
-    id = models.AutoField(primary_key=True)
     # userdata = models.OneToOneField(UserData, on_delete=models.CASCADE)
     completed = models.BooleanField(default=False)
     query_text = models.TextField()  # Stores the query text
