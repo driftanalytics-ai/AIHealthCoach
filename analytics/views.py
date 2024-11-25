@@ -72,7 +72,7 @@ class GraphViewSet(ReadOnlyModelViewSet):
                 else:
                     ed_total_interactions[ed["pk"]] = ed["interactions"]
         for ed in serializer.data["edges"]:
-            ed["interactions"] = ed_total_interactions[ed["pk"]]
+            ed["interactions"] = ed_total_interactions.get(ed["pk"], 0)
         return Response(serializer.data)
 
 
