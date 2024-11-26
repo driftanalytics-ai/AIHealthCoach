@@ -96,8 +96,12 @@ def make_requests(url, headers, num_requests=100):
 
 
 # URL and headers
-url = "https://backend.ebonwinglabs.com/agents/health_plan/"
+# url = "https://backend.ebonwinglabs.com/agents/health_plan/"
+# url1 = "https://backend.ebonwinglabs.com/agents/health_plan2/"
+url = "http://127.0.0.1:8000/agents/health_plan/"
+url1 = "https://127.0.0.1:8000/agents/health_plan2/"
 headers = {"Content-Type": "application/json"}
 
 # Run the script
-make_requests(url, headers)
+make_requests(url, headers, num_requests=10)
+make_requests(url1, headers, num_requests=10)
