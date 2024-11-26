@@ -10,6 +10,12 @@ from analytics.models import Agent, AgentQuery, Query
 
 
 class QueryTracker:
+    # def track_query(query_name: str):
+    #     def decorator(func):
+    #         def wrapper(*args,**kwargs):
+    #             return func(*args,**kwargs):
+    #         return wrapper
+    #     return decorator
     def track_query(query_name: str):
         def decorator(func):
 
@@ -56,13 +62,16 @@ class QueryTracker:
                         completed=False,
                         metadata=None,
                     )
+                    query.refresh_from_db()
+                    query.end_timestamp = datetime.datetime.now()
+                    query.save()
                     last_agent_query.save()
                     raise
                 else:
                     if isinstance(response, Response):
                         query.refresh_from_db()
                         query.response = str(response.data)
-
+                        # query.end_timestamp = datetime.datetime.now()
                         query.save()
 
                     return response
