@@ -28,7 +28,7 @@ class Workflow:
         graph = Graph()
 
         # Add nodes for each agent task
-        graph.add_node("fitness", lambda _: fitness_agent.start(**kwargs))
+        graph.add_node("fitness_agent", lambda _: fitness_agent.start(**kwargs))
         graph.add_node("nutrition", lambda _: nutrition_agent.start(**kwargs))
         graph.add_node("mental_health", lambda _: mental_health_agent.start(**kwargs))
         graph.add_node(
