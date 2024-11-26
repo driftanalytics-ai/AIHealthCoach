@@ -32,7 +32,9 @@ def get_query_latency(request: HttpRequest):
                     end = start
                 for aq in AgentQuery.objects.filter(queryId=q):
                     end = max(end, aq.endTimestamp)
-                latencies.append((end - start).total_seconds())
+                latencies.append(
+                    {"queryId": q.pk, "latency": (end - start).total_seconds()}
+                )
             graph_delays.append({"graph_name": graph.name, "latencies": latencies})
         response = JsonResponse(graph_delays, safe=False)
         return response
@@ -52,22 +54,27 @@ def get_agent_completed(request: HttpRequest):
                     agent_comp_incomp[agent.name][1] += 1
         response = []
         for k, v in agent_comp_incomp.items():
-            response.append((k, v[0], v[1]))
+            response.append({"agent": k, "completed": v[0], "failed": v[1]})
         response = JsonResponse(response, safe=False)
         return response
 
 
 def token_queries(request: HttpRequest):
     if request.method == "GET":
-        queries = Query.objects.all().order_by("-timestamp")
-        queries = queries[: max(len(queries), 1000)]
-        tokens = []
-        for q in queries:
-            token_count = 0
-            for aq in AgentQuery.objects.filter(queryId=q):
-                token_count += aq.token_usage
-            tokens.append(token_count)
-        response = JsonResponse(tokens, safe=False)
+        graphs = Graph.objects.all()
+        graph_tokens = []
+        for graph in graphs:
+            queries = Query.objects.filter(graph=graph).order_by("-timestamp")
+            queries = queries[: max(len(queries), 1000)]
+            tokens = []
+            for q in queries:
+                token_count = 0
+                for aq in AgentQuery.objects.filter(queryId=q):
+                    token_count += aq.token_usage
+                tokens.append({"queryId": q.id, "token": token_count})
+            graph_tokens.append({"graph": graph.name, "tokens": tokens})
+
+        response = JsonResponse(graph_tokens, safe=False)
         return response
 
 
@@ -84,7 +91,7 @@ def agent_tokens(request: HttpRequest):
             agent_token[agent.name] = total_tokens / max(count, 1)
         response = []
         for k, v in agent_token.items():
-            response.append([k, v])
+            response.append({"agent": k, "tokens": v})
         response = JsonResponse(response, safe=False)
         return response
 
