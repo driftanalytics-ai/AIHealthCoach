@@ -3,6 +3,14 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework.views import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework import views
+from django.db.models import F
+from collections import defaultdict
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Max, FloatField
+from django.db.models.functions import Cast
 
 from analytics.models import Agent, AgentQuery, Graph, Query
 from analytics.serializers import (
@@ -12,6 +20,7 @@ from analytics.serializers import (
     EnrichedGraphSerialier,
     GraphSerializer,
     QuerySerializer,
+    AgentPromptSerializer
 )
 from analytics.utils.graph import get_master_graph
 
@@ -132,10 +141,98 @@ def graph_view(request: HttpRequest):
         return response
 
 
+class BottleneckAgentView(APIView):
+    def get(self, request):
+        # Get all agents with their runtime stats max_val
+        # Assuming you're using a serializer or custom method to access nested runtime_stats
+        agents_with_max_val = Agent.objects.annotate(
+            max_runtime=Cast('runtime_stats__max_val', FloatField())
+        )
+        
+        # Find the maximum max_val across all agents
+        max_latency = agents_with_max_val.aggregate(
+            max_overall_runtime=Max('max_runtime')
+        )['max_overall_runtime']
+        
+        # Find the agent with the max_val matching the overall maximum
+        bottleneck_agent = agents_with_max_val.filter(
+            max_runtime=max_latency
+        ).first()
+        
+        # If no agent is found, return a 404 response
+        if not bottleneck_agent:
+            return Response({
+                'error': 'No bottleneck agent found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Prepare the response payload
+        response_data = {
+            'agentId': bottleneck_agent.id,
+            'agentName': bottleneck_agent.name,
+            'latency': max_latency
+        }
+        
+        return Response(response_data)
+
+
 class DetailedAgentView(ReadOnlyModelViewSet):
     queryset = Agent.objects.all()
     serializer_class = DetailedAgentSerializer
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        serializer.data["query"] = serializer.data["prompt"]
+        del serializer.data["prompt"]
+        return Response(serializer.data)
 
+class AgentPromptsView(views.APIView):
+    def get(self, request):
+        # Query to get prompts with their queryIds, grouped by agent and prompt
+        agent_prompts = AgentQuery.objects.exclude(prompt__isnull=True) \
+            .values('agent', 'prompt', 'queryId')
+        
+        # Group the results
+        grouped_prompts = defaultdict(lambda: {
+            'agent': None,
+            'prompts': defaultdict(list)
+        })
+        
+        for entry in agent_prompts:
+            agent = entry['agent']
+            prompt = entry['prompt']
+            queryId = entry['queryId']
+            
+            # Populate agent details
+            if grouped_prompts[agent]['agent'] is None:
+                grouped_prompts[agent]['agent'] = agent
+            
+            # Add queryId to the corresponding prompt
+            prompt_details = grouped_prompts[agent]['prompts']
+            
+            # Check if prompt exists, if not create a new entry
+            prompt_entry = next((p for p in prompt_details[prompt] if p['prompt'] == prompt), None)
+            if not prompt_entry:
+                prompt_details[prompt].append({
+                    'prompt': prompt,
+                    'queryIds': [queryId]
+                })
+            else:
+                if queryId not in prompt_entry['queryIds']:
+                    prompt_entry['queryIds'].append(queryId)
+        
+        # Prepare final response by converting defaultdict to list
+        response_data = []
+        for agent_info in grouped_prompts.values():
+            agent_response = {
+                'agent': agent_info['agent'],
+                'prompts': list(agent_info['prompts'].values())[0]  # Flatten the nested defaultdict
+            }
+            response_data.append(agent_response)
+        
+        # Serialize and return
+        serializer = AgentPromptSerializer(response_data, many=True)
+        return Response(serializer.data)
 
 class GraphViewSet(ReadOnlyModelViewSet):
     queryset = Graph.objects.all()

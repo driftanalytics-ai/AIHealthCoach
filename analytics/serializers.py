@@ -5,6 +5,10 @@ from rest_framework.serializers import (
     BaseSerializer,
     ModelSerializer,
     SerializerMethodField,
+    Serializer,
+    IntegerField,
+    ListField,
+    CharField
 )
 
 from analytics.models import Agent, AgentQuery, Edge, Graph, Query
@@ -37,12 +41,18 @@ class DetailedAgentSerializer(ModelSerializer):
         agent_queries = AgentQuery.objects.filter(agent=obj)
         return AgentQuerySerializer(agent_queries, many=True).data
 
+class PromptDetailSerializer(Serializer):
+    prompt = CharField()
+    queryIds = ListField(child=IntegerField())
+
+class AgentPromptSerializer(Serializer):
+    agent = IntegerField()
+    prompts = ListField(child=PromptDetailSerializer())
 
 class AgentQuerySerializer(ModelSerializer):
     class Meta:
         model = AgentQuery
-        fields = ["pk", "name", "model_name", "runtime_stats", "token_usage_stats"]
-
+        fields = ["pk", "name", "model_name", "runtime_stats", "token_usage_stats", "prompt"]
 
 class EdgeSerializer(ModelSerializer):
     start = AgentSerializer()
@@ -77,6 +87,7 @@ class AgentQuerySerializer(ModelSerializer):
             "response",
             "metadata",
             "completed",
+            "prompt"
         ]
 
 

@@ -15,6 +15,7 @@ class AgentTrackers:
             @wraps(func)
             def wrapper(*args, **kwargs):
                 metadata = []
+                prompt = None
                 for arg in args:
                     try:
                         a = str(arg)
@@ -26,6 +27,9 @@ class AgentTrackers:
                     try:
                         ks = str(k)
                         vs = str(v)
+                        if ks == "prompt":
+                            prompt = vs
+                            print(agent_name, prompt)
                     except:
                         continue
                     else:
@@ -42,7 +46,7 @@ class AgentTrackers:
                     completed = False
                     end = time.time()
                     update_agent_query(
-                        qid, agent_name, start, end, completed, str(e), metadata
+                        qid, agent_name, start, end, completed, str(e), metadata, prompt
                     )
                     raise
                 else:
@@ -55,6 +59,7 @@ class AgentTrackers:
                         completed,
                         json.dumps(response),
                         metadata,
+                        prompt
                     )
                     return response
 
@@ -71,6 +76,7 @@ def update_agent_query(
     completed: bool,
     response,
     metadata,
+    prompt
 ):
     query, _ = Query.objects.get_or_create(id=qid)
     print(agent_name, query.graph, "agent name graph")
@@ -90,5 +96,6 @@ def update_agent_query(
         response=response,
         completed=completed,
         metadata=metadata,
+        prompt=prompt
     )
     agent_query.save()
