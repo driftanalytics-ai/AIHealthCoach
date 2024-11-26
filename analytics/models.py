@@ -89,6 +89,7 @@ class Query(models.Model):
     timestamp = models.DateTimeField(
         auto_now_add=True
     )  # Automatically sets the current timestamp
+    end_timestamp = models.DateTimeField(auto_now_add=True, null=True)
     graph = models.ForeignKey(Graph, on_delete=models.CASCADE, null=True)
     request_body = models.TextField(null=True)
     response = models.TextField(null=True)

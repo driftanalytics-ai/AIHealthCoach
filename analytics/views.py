@@ -16,6 +16,79 @@ from analytics.serializers import (
 from analytics.utils.graph import get_master_graph
 
 
+def get_query_latency(request: HttpRequest):
+    if request.method == "GET":
+        graphs = Graph.objects.all()
+        graph_delays = []
+        for graph in graphs:
+            queries = Query.objects.filter(graph=graph).order_by("-timestamp")
+            queries = queries[: max(len(queries), 1000)]
+
+            latencies = []
+            for q in queries:
+                start = q.timestamp
+                end = q.end_timestamp
+                if end is None:
+                    end = start
+                for aq in AgentQuery.objects.filter(queryId=q):
+                    end = max(end, aq.endTimestamp)
+                latencies.append((end - start).total_seconds())
+            graph_delays.append({"graph_name": graph.name, "latencies": latencies})
+        response = JsonResponse(graph_delays, safe=False)
+        return response
+
+
+def get_agent_completed(request: HttpRequest):
+    if request.method == "GET":
+        agent_comp_incomp = dict()
+        for agent in Agent.objects.all():
+            if agent.name not in agent_comp_incomp.keys():
+                agent_comp_incomp[agent.name] = [0, 0]
+            agent_queries = AgentQuery.objects.filter(agent=agent)
+            for aq in agent_queries:
+                if aq.completed:
+                    agent_comp_incomp[agent.name][0] += 1
+                else:
+                    agent_comp_incomp[agent.name][1] += 1
+        response = []
+        for k, v in agent_comp_incomp.items():
+            response.append((k, v[0], v[1]))
+        response = JsonResponse(response, safe=False)
+        return response
+
+
+def token_queries(request: HttpRequest):
+    if request.method == "GET":
+        queries = Query.objects.all().order_by("-timestamp")
+        queries = queries[: max(len(queries), 1000)]
+        tokens = []
+        for q in queries:
+            token_count = 0
+            for aq in AgentQuery.objects.filter(queryId=q):
+                token_count += aq.token_usage
+            tokens.append(token_count)
+        response = JsonResponse(tokens, safe=False)
+        return response
+
+
+def agent_tokens(request: HttpRequest):
+    if request.method == "GET":
+        agent_token = dict()
+        agents = Agent.objects.all()
+        for agent in agents:
+            total_tokens = 0
+            count = 0
+            for aq in AgentQuery.objects.filter(agent=agent):
+                total_tokens += aq.token_usage
+                count += 1
+            agent_token[agent.name] = total_tokens / max(count, 1)
+        response = []
+        for k, v in agent_token.items():
+            response.append([k, v])
+        response = JsonResponse(response, safe=False)
+        return response
+
+
 def metric_info(request: HttpRequest):
     if request.method == "GET":
         agent_queries = AgentQuery.objects.all()
