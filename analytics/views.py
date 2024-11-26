@@ -6,6 +6,11 @@ from rest_framework.viewsets import ReadOnlyModelViewSet
 from rest_framework import views
 from django.db.models import F
 from collections import defaultdict
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Max, FloatField
+from django.db.models.functions import Cast
 
 from analytics.models import Agent, AgentQuery, Graph, Query
 from analytics.serializers import (
@@ -134,6 +139,40 @@ def graph_view(request: HttpRequest):
         print(agent_data, edge_data)
         response = JsonResponse({"agents": agent_data, "edges": edge_data})
         return response
+
+
+class BottleneckAgentView(APIView):
+    def get(self, request):
+        # Get all agents with their runtime stats max_val
+        # Assuming you're using a serializer or custom method to access nested runtime_stats
+        agents_with_max_val = Agent.objects.annotate(
+            max_runtime=Cast('runtime_stats__max_val', FloatField())
+        )
+        
+        # Find the maximum max_val across all agents
+        max_latency = agents_with_max_val.aggregate(
+            max_overall_runtime=Max('max_runtime')
+        )['max_overall_runtime']
+        
+        # Find the agent with the max_val matching the overall maximum
+        bottleneck_agent = agents_with_max_val.filter(
+            max_runtime=max_latency
+        ).first()
+        
+        # If no agent is found, return a 404 response
+        if not bottleneck_agent:
+            return Response({
+                'error': 'No bottleneck agent found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Prepare the response payload
+        response_data = {
+            'agentId': bottleneck_agent.id,
+            'agentName': bottleneck_agent.name,
+            'latency': max_latency
+        }
+        
+        return Response(response_data)
 
 
 class DetailedAgentView(ReadOnlyModelViewSet):
