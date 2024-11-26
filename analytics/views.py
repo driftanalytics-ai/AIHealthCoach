@@ -3,6 +3,9 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework.views import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework import views
+from django.db.models import F
+from collections import defaultdict
 
 from analytics.models import Agent, AgentQuery, Graph, Query
 from analytics.serializers import (
@@ -12,6 +15,7 @@ from analytics.serializers import (
     EnrichedGraphSerialier,
     GraphSerializer,
     QuerySerializer,
+    AgentPromptSerializer
 )
 from analytics.utils.graph import get_master_graph
 
@@ -56,6 +60,53 @@ class DetailedAgentView(ReadOnlyModelViewSet):
     queryset = Agent.objects.all()
     serializer_class = DetailedAgentSerializer
 
+class AgentPromptsView(views.APIView):
+    def get(self, request):
+        # Query to get prompts with their queryIds, grouped by agent and prompt
+        agent_prompts = AgentQuery.objects.exclude(prompt__isnull=True) \
+            .values('agent', 'prompt', 'queryId')
+        
+        # Group the results
+        grouped_prompts = defaultdict(lambda: {
+            'agent': None,
+            'prompts': defaultdict(list)
+        })
+        
+        for entry in agent_prompts:
+            agent = entry['agent']
+            prompt = entry['prompt']
+            queryId = entry['queryId']
+            
+            # Populate agent details
+            if grouped_prompts[agent]['agent'] is None:
+                grouped_prompts[agent]['agent'] = agent
+            
+            # Add queryId to the corresponding prompt
+            prompt_details = grouped_prompts[agent]['prompts']
+            
+            # Check if prompt exists, if not create a new entry
+            prompt_entry = next((p for p in prompt_details[prompt] if p['prompt'] == prompt), None)
+            if not prompt_entry:
+                prompt_details[prompt].append({
+                    'prompt': prompt,
+                    'queryIds': [queryId]
+                })
+            else:
+                if queryId not in prompt_entry['queryIds']:
+                    prompt_entry['queryIds'].append(queryId)
+        
+        # Prepare final response by converting defaultdict to list
+        response_data = []
+        for agent_info in grouped_prompts.values():
+            agent_response = {
+                'agent': agent_info['agent'],
+                'prompts': list(agent_info['prompts'].values())[0]  # Flatten the nested defaultdict
+            }
+            response_data.append(agent_response)
+        
+        # Serialize and return
+        serializer = AgentPromptSerializer(response_data, many=True)
+        return Response(serializer.data)
 
 class GraphViewSet(ReadOnlyModelViewSet):
     queryset = Graph.objects.all()

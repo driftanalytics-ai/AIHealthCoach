@@ -2,12 +2,13 @@ import json
 import os
 from pprint import pprint
 
-from agents.utils import count_characters_in_json
-from analytics.decorators.agent import AgentTrackers
 from django.utils import timezone
 from langchain.adapters.openai import convert_openai_messages
 from langchain_openai import ChatOpenAI
 from tavily import TavilyClient
+
+from agents.utils import count_characters_in_json
+from analytics.decorators.agent import AgentTrackers
 
 
 class FitnessAgent:

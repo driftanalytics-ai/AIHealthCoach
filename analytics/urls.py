@@ -5,6 +5,7 @@ from analytics.views import (
     DetailedAgentView,
     GraphViewSet,
     QueryViewSet,
+    AgentPromptsView,
     graph_view,
     metric_info,
 )
@@ -17,6 +18,7 @@ router.register("graphs", GraphViewSet)
 urlpatterns = [
     path("graph/", graph_view),
     path("metrics/", metric_info),
+    path("prompt/", AgentPromptsView.as_view()),
     path("", include(router.urls)),
 ]
 print(router.urls)

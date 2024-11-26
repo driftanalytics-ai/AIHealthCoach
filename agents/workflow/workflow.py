@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from pprint import pprint
+import copy
 
 from langgraph.graph import Graph
 
@@ -88,17 +89,85 @@ class Workflow:
         # Define a LangGraph graph
         graph = Graph()
 
+        fitness_prompt = {
+            "prompt": [
+                {
+                    "role": "system",
+                    "content": "You are a fitness coach. Your task is to create a personalized workout plan based on user data.",
+                },
+                {
+                    "role": "user",
+                    "content": f"User data: #USER_DATA\n"
+                    f"Create a workout plan for a #USER_DATA_AGE year old, #USER_DATA_WEIGHT kg person "
+                    f"with the goal to #FITNESS_GOAL.\n"
+                    f"Please return the plan in the following JSON format:\n"
+                    f'{{"workout_plan": ["Exercise 1", "Exercise 2", "Exercise 3", "Exercise 4"]}}\n',
+                },
+            ]
+        }
+
+        nutrition_prompt = {
+            "prompt": [
+                {
+                    "role": "system",
+                    "content": "You are a nutritionist. Your task is to create a personalized meal plan based on user data.",
+                },
+                {
+                    "role": "user",
+                    "content": f"User data: #USER_DATA\n"
+                    f"Create a meal plan for a #USER_DATA_AGE year old, #USER_DATA_WEIGHT kg person "
+                    f"with dietary preferences: #DIETARY_PREFERENCES.\n"
+                    f"Please return the plan in the following JSON format:\n"
+                    f'{{"meal_plan": ["Meal 1", "Meal 2", "Meal 3", "Meal 4"]}}\n',
+                },
+            ]
+        }
+
+        mental_health_prompt = {
+            "prompt": [
+                {
+                    "role": "system",
+                    "content": "You are a mental health coach. Your task is to provide wellness tips based on user data.",
+                },
+                {
+                    "role": "user",
+                    "content": f"User data: #USER_DATA\n"
+                    f"Provide mental wellness tips for someone looking to #MENTAL_HEALTH_GOALS.\n"
+                    f"Please return the tips in the following JSON format:\n"
+                    f'{{"wellness_tips": ["Tip 1", "Tip 2", "Tip 3", "Tip 4"]}}\n',
+                },
+            ]
+        }
+
+        progress_report_prompt = {
+            "prompt": [
+                {
+                    "role": "system",
+                    "content": "You are a progress tracking agent. Your task is to generate a progress report based on user feedback.",
+                },
+                {
+                    "role": "user",
+                    "content": f"User data: #USER_DATA\n"
+                    f"Feedback: Fitness: #FITNESS_REPORT, Nutrition: #NUTRITION_REPORT, "
+                    f"Mental Health: #MENTAL_HEALTH_REPORT.\n"
+                    f"Generate a progress report.\n"
+                    f"Please return the report in the following JSON format:\n"
+                    f'{{"progress_report": "Report content"}}\n',
+                },
+            ]
+        }
+
         # Add nodes for each agent task
-        graph.add_node("fitness", lambda _: fitness_agent.start(**kwargs))
-        graph.add_node("nutrition", lambda _: nutrition_agent.start(**kwargs))
-        graph.add_node("mental_health", lambda _: mental_health_agent.start(**kwargs))
+        graph.add_node("fitness", lambda _: fitness_agent.start(**{**kwargs, **fitness_prompt}))
+        graph.add_node("nutrition", lambda _: nutrition_agent.start(**{**kwargs, **nutrition_prompt}))
+        graph.add_node("mental_health", lambda _: mental_health_agent.start(**{**kwargs, **mental_health_prompt}))
         graph.add_node(
             "progress_report",
             lambda _: progress_agent.track_progress(
                 fitness_agent.current_workout_plan,
                 nutrition_agent.current_meal_plan,
                 mental_health_agent.wellness_tips,
-                **kwargs,
+                **{**kwargs, **progress_report_prompt},
             ),
         )
 
