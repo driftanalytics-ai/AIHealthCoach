@@ -52,7 +52,7 @@ class AgentPromptSerializer(Serializer):
 class AgentQuerySerializer(ModelSerializer):
     class Meta:
         model = AgentQuery
-        fields = ["pk", "name", "model_name", "runtime_stats", "token_usage_stats"]
+        fields = ["pk", "name", "model_name", "runtime_stats", "token_usage_stats", "prompt"]
 
 class EdgeSerializer(ModelSerializer):
     start = AgentSerializer()
@@ -87,6 +87,7 @@ class AgentQuerySerializer(ModelSerializer):
             "response",
             "metadata",
             "completed",
+            "prompt"
         ]
 
 

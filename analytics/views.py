@@ -59,6 +59,13 @@ def graph_view(request: HttpRequest):
 class DetailedAgentView(ReadOnlyModelViewSet):
     queryset = Agent.objects.all()
     serializer_class = DetailedAgentSerializer
+    
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        serializer.data["query"] = serializer.data["prompt"]
+        del serializer.data["prompt"]
+        return Response(serializer.data)
 
 class AgentPromptsView(views.APIView):
     def get(self, request):
